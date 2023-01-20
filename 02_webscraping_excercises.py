@@ -20,7 +20,7 @@ soup = BeautifulSoup(page.text, "lxml")
 body_tags = soup.body
 
 
-# EXCERCISE 01: EXTRACT TOPCIS, DATES AND AUTHOR
+# EXCERCISE 01: TECH ARTICLE TOPICS
 # - TECHCRUNCH
 
 # Topics
@@ -47,8 +47,8 @@ tc_df = pd.DataFrame({"title":topic_list[0], "author":author_list[0], "date":dat
 tc_df.head()
 
 
-# EXCERCISE 02: EXTRACT TOPCIS, DATES AND AUTHOR
-# - TECHCRUNCH
+# EXCERCISE 02: SCRAPE STOCK MARKET DATA POINTS
+# - MARKETWATCH
 
 # Get Page HTML
 mwatch_url = "https://www.marketwatch.com/investing/stock/tsla?mod=search_symbol"
@@ -82,3 +82,30 @@ mwatch_dict = {
     "high"       :range_list[0][1], 
     "rating"     :rating
 }
+
+
+# EXCERCISE 03: SCRAPE NFL STATS
+# - NFL.COM
+
+nfl_url  = "https://www.nfl.com/standings/league/2021/REG"
+nfl_page = requests.get(nfl_url)
+nfl_soup = BeautifulSoup(nfl_page.text, "lxml")
+
+# Get Table Tag HTML
+nfl_table = nfl_soup.find("table", {"summary":"Standings - Detailed View"})
+
+# Headers
+nfl_headers_list = []
+nfl_header = [i.text.strip() for i in nfl_table.find_all("th")]
+nfl_headers_list.append(nfl_header)
+
+df_nfl = pd.DataFrame(columns = nfl_headers_list[0])
+
+# Rows
+for i in nfl_table.find_all("tr")[1:]:
+    row_data = i.find_all("td")
+    row = [j.text for j in row_data]
+    length = len(df_nfl)
+    df_nfl.loc[length] = row
+    
+df_nfl.head()
