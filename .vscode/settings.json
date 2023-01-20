@@ -1,0 +1,13 @@
+{
+
+    "macros": {  // Note: this requires macros extension by publisher:"geddski" 
+    "pythonExecSelectionAndCursorDown": [
+        "python.execSelectionInTerminal", 
+        "cursorDown" 
+    ]
+},
+
+
+    "git.ignoreLimitWarning": true,
+    "jupyter.sendSelectionToInteractiveWindow": false
+}
