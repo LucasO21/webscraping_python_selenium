@@ -103,9 +103,11 @@ df_nfl = pd.DataFrame(columns = nfl_headers_list[0])
 
 # Rows
 for i in nfl_table.find_all("tr")[1:]:
-    row_data = i.find_all("td")
-    row = [j.text for j in row_data]
+    first_td = i.find_all("td")[0].find("div", class_ = "d3-o-club-fullname").text.strip()
+    data = i.find_all("td")[1:]
+    row_data = [j.text.strip() for j in data]
+    row_data.insert(0, first_td)
     length = len(df_nfl)
-    df_nfl.loc[length] = row
+    df_nfl.loc[length] = row_data
     
 df_nfl.head()
