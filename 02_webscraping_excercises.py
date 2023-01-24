@@ -111,3 +111,56 @@ for i in nfl_table.find_all("tr")[1:]:
     df_nfl.loc[length] = row_data
     
 df_nfl.head()
+
+
+# EXCERCISE 04: SCRAPE MULTIPLE PAGES
+# - CARPAGES.CA
+
+carpages_url  = "https://www.carpages.ca/used-cars/search/?fueltype_id%5B0%5D=3&fueltype_id%5B1%5D=7"
+carpages_page = requests.get(carpages_url)
+carpages_soup = BeautifulSoup(carpages_page.text, "lxml")
+
+while True:
+    
+    # Get Car Postings
+    postings = carpages_soup.find_all("div", class_ = "media soft push-none rule")
+    
+    for post in postings:
+        
+        link       = "https://www.carpages.ca" + post.find("a", class_ = "media__img media__img--thumb").get("href")
+        title      = post.find("hgroup", class_ = "push-half--bottom").find("a")["title"]
+        detail     = post.find("hgroup", class_ = "push-half--bottom").find("h5", class_ = "hN grey").text
+        price      = post.find("strong", class_ = "delta").text.strip()
+        
+        miles_tag  = post.find("div", class_ = "grey l-column l-column--small-6 l-column--medium-4")
+        miles = []
+        for span in miles_tag:
+            miles.append(span.get_text().strip())
+        miles = "".join(miles)
+        
+        color_tag  = post.find("span", class_ = "chip push-half--right")
+        color = []
+        if color_tag:
+            text = color_tag.get_text()
+        else:
+            text = "NA"
+        color.append(text)
+        color = "".join(color)
+        
+        dealer     = post.find("hgroup", class_ = "vehicle__card--dealerInfo").find("h5", class_ = "hN").text
+        dealer_loc = post.find("hgroup", class_ = "vehicle__card--dealerInfo").find("p", class_ = "hN").text
+    
+    break
+        
+    
+    # Next Page URL
+    next_page = carpages_soup.find("a", {"title":"Next Page"}).get("href")
+    next_page_full = "https://www.carpages.ca" + next_page
+
+    # Next Page HTML
+    carpages_url = next_page_full
+    carpages_page = requests.get(carpages_url)
+    carpages_soup = BeautifulSoup(carpages_page.text, "lxml")
+    
+
+
