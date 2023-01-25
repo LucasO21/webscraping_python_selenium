@@ -7,6 +7,10 @@ from bs4 import BeautifulSoup
 import lxml
 import re
 
+pd.options.display.max_columns = 30
+pd.options.display.max_rows = 50
+pd.options.display.expand_frame_repr = False
+
 # URL
 url = "https://techcrunch.com/category/apps/"
 
@@ -116,20 +120,36 @@ df_nfl.head()
 # EXCERCISE 04: SCRAPE MULTIPLE PAGES
 # - CARPAGES.CA
 
-carpages_url  = "https://www.carpages.ca/used-cars/search/?fueltype_id%5B0%5D=3&fueltype_id%5B1%5D=7"
+carpages_url  = "https://www.carpages.ca/used-cars/search/?num_results=50&fueltype_id%5B0%5D=3&fueltype_id%5B1%5D=7&p=1"
 carpages_page = requests.get(carpages_url)
 carpages_soup = BeautifulSoup(carpages_page.text, "lxml")
 
-while True:
+# Create Dataframe Placeholder
+df_carpages = pd.DataFrame({
+    "link":[], 
+    "title":[], 
+    "detail":[], 
+    "price":[], 
+    "mileage":[], 
+    "color":[], 
+    "dealership":[], 
+    "dealership_location":[]
+})
+
+# Initialize Counter
+counter = 0
+
+# While Loop
+while counter < 10:
     
     # Get Car Postings
     postings = carpages_soup.find_all("div", class_ = "media soft push-none rule")
-    
-    for post in postings:
+    for post in postings:       
         
+        # Get Data Points
         link       = "https://www.carpages.ca" + post.find("a", class_ = "media__img media__img--thumb").get("href")
-        title      = post.find("hgroup", class_ = "push-half--bottom").find("a")["title"]
-        detail     = post.find("hgroup", class_ = "push-half--bottom").find("h5", class_ = "hN grey").text
+        title      = post.find("h4", class_ = "hN").text.strip()
+        detail     = post.find("h5", class_ = "hN grey").text.strip()
         price      = post.find("strong", class_ = "delta").text.strip()
         
         miles_tag  = post.find("div", class_ = "grey l-column l-column--small-6 l-column--medium-4")
@@ -138,23 +158,29 @@ while True:
             miles.append(span.get_text().strip())
         miles = "".join(miles)
         
-        color_tag  = post.find("span", class_ = "chip push-half--right")
-        color = []
-        if color_tag:
-            text = color_tag.get_text()
+        color  = post.find_all("div", class_ = "grey l-column l-column--small-6 l-column--medium-4")[1].text.strip()
+        if len(color) == 0:
+            color = "NA"
         else:
-            text = "NA"
-        color.append(text)
-        color = "".join(color)
+            color = color
         
         dealer     = post.find("hgroup", class_ = "vehicle__card--dealerInfo").find("h5", class_ = "hN").text
-        dealer_loc = post.find("hgroup", class_ = "vehicle__card--dealerInfo").find("p", class_ = "hN").text
-    
-    break
+        dealer_loc = post.find("hgroup", class_ = "vehicle__card--dealerInfo").find("p", class_ = "hN").text   
         
-    
+        # Create Dataframe
+        df_carpages = df_carpages.append({
+            "link":link, 
+            "title":title, 
+            "detail":detail, 
+            "price":price, 
+            "mileage":miles, 
+            "color":color, 
+            "dealership":dealer, 
+            "dealership_location":dealer_loc
+        }, ignore_index = True) 
+            
     # Next Page URL
-    next_page = carpages_soup.find("a", {"title":"Next Page"}).get("href")
+    next_page = carpages_soup.find("a", class_ = "nextprev").get("href")
     next_page_full = "https://www.carpages.ca" + next_page
 
     # Next Page HTML
@@ -162,5 +188,7 @@ while True:
     carpages_page = requests.get(carpages_url)
     carpages_soup = BeautifulSoup(carpages_page.text, "lxml")
     
-
-
+    counter += 1
+    
+df_carpages
+df_carpages.info()
