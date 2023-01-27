@@ -3,7 +3,7 @@
 # Imports
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup as bs
+from bs4 import BeautifulSoup as BS
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -162,4 +162,70 @@ driver.execute_script('window.scrollTo(0,22500)')
 
 # - Take Screenshot
 driver.save_screenshot("png/imdb.png")
+
+
+#######################################################################################################################
+
+# INFINITE SCROLLING (NIKE WEBSIE)
+
+# - Setup
+driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
+driver.get("https://www.nike.com/w/sale-3yaep/")
+time.sleep(10)
+
+# - Grab The Height of The Page
+last_height = driver.execute_script('return document.body.scrollHeight')
+
+# - Scroll To The Bottom of The Page
+t1 = time.time()
+while True:
+    driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+    time.sleep(3)
+    new_height = driver.execute_script('return document.body.scrollHeight')
+    if new_height == last_height:
+        break
+    last_height = new_height
+t2 = time.time()
+
+#  - Grab HTML
+soup = BS(driver.page_source, 'lxml')
+
+# - Grab Product Cards
+product_card = soup.find_all('div', class_ = 'product-card__body')
+
+# - Create Dataframe Placeholder
+df_nike = pd.DataFrame({'link':[], 'title':[], 'desc':[], 'price':[], 'sale_price':[]})
+
+# - Grab Data Points
+t3 = time.time()
+for product in product_card:
+    
+    try:
+        link       = product.find('a', class_ = 'product-card__img-link-overlay').get('href')
+        title      = product.find('div', class_ = 'product-card__title').text
+        desc       = product.find('div', class_ = 'product-card__subtitle').text
+        #color      = product.find('div', class_ = 'product-card__product-count font-override__body1').text
+        sale_price = product.find('div', class_ = 'product-price is--current-price css-1ydfahe').text
+        price      = product.find('div', class_ = 'product-price us__styling is--striked-out css-0').text
+        
+        df_nike =  df_nike.append({
+        "link":link,
+        "title":title,
+        "desc":desc,
+        "price":price,
+        "sale_price":sale_price
+        }, ignore_index = True)
+        
+    except:
+        pass
+    
+t4 = time.time()
+
+df_nike.to_csv('data/webscraping_nike.csv')
+
+print("Scroll Time: ", t2 - t1)
+print("Scrape Time: ", t4 - t3)
+
+
+
 
