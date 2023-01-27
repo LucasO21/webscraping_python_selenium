@@ -8,6 +8,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import Chrome
+from selenium.webdriver.support.ui import WebDriverWait as WDW
+from selenium.webdriver.support import expected_conditions as EC
+import time
 
 # # Setup
 # url = "https://www.goat.com/sneakers"
@@ -109,9 +112,54 @@ driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
 
 while True:
     driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+    
+    break
    
+# Wait Times
+
+# - Open Webpage
+driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
+driver.get("https://www.google.com/")
+
+# - Enter Search Criteria & Enter
+box = driver.find_element("xpath", '/html/body/div[1]/div[3]/form/div[1]/div[1]/div[1]/div/div[2]/input')
+box.send_keys("arsenal fc")
+box.send_keys(Keys.ENTER)
+
+# - Wait 10 Seconds
+element = WDW(driver, 10).until(EC.presence_of_element_located((By.ID, 'tophf')))
+#time.sleep(5)
+
+# - Click Image Button
+driver.find_element('xpath', '//*[@id="hdtb-msb"]/div[1]/div/div[3]/a').click()
 
 
 
-    
-    
+# SELENIUM EXCERCISE
+
+# - Initialize Webdriver & Go to Google.Com
+driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
+driver.get("https://www.google.com/")
+
+# Inputs Into Google Search Box & Hit Enter
+box = driver.find_element("xpath", '/html/body/div[1]/div[3]/form/div[1]/div[1]/div[1]/div/div[2]/input')
+box.send_keys("top 100 movies of all time")
+
+# - Press Enter Button to Search
+box.send_keys(Keys.ENTER)
+
+# - Wait 3 Seconds
+time.sleep(3)
+
+# - Click The Link for IMDB
+driver.find_element('xpath', '//*[@id="rso"]/div[1]/div/div/div[1]/div/a/h3').click()
+
+# - Wait 3 Seconds
+time.sleep(3)
+
+# - Scroll Until Jaws 
+driver.execute_script('window.scrollTo(0,22500)')
+
+# - Take Screenshot
+driver.save_screenshot("png/imdb.png")
+
