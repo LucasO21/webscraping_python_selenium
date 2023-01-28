@@ -11,6 +11,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.support.ui import WebDriverWait as WDW
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import os
 
 # # Setup
 # url = "https://www.goat.com/sneakers"
@@ -166,7 +167,7 @@ driver.save_screenshot("png/imdb.png")
 
 #######################################################################################################################
 
-# INFINITE SCROLLING (NIKE WEBSIE)
+# INFINITE SCROLLING (NIKE WEBSITE)
 
 # - Setup
 driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
@@ -227,5 +228,90 @@ print("Scroll Time: ", t2 - t1)
 print("Scrape Time: ", t4 - t3)
 
 
+#######################################################################################################################
 
+# INFINITE SCROLLING (GOAT WEBSITE)
 
+# - Setup
+driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
+driver.get("https://www.goat.com/sneakers")
+time.sleep(10)
+
+# - Scroll Till `Color` Link Is Visible
+driver.execute_script('window.scrollTo(0, 700)')
+
+# - Click The Link For Colors
+driver.find_element('xpath', '//*[@id="desktop-filters"]/button[6]').click()
+time.sleep(3)
+
+# - Grab HTML (Soup)
+soup = BS(driver.page_source, 'lxml')
+
+# - Get Links (Colors)
+links_list = []
+for tag in soup.find_all('a', class_ = lambda x: x and x.startswith('SearchFilterColorDesktop')):
+    link = 'https://www.goat.com/' + tag['href']
+    links_list.append(link)
+
+len(links_list)
+
+# test_link = links_list[0:2]
+
+# - Get Data Points
+for url in links_list:    
+    
+    # - Get Page Color
+    color_page = url.split('/')[-1].split('=')[1]
+
+    # - Get Page Driver
+    driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
+    driver.get(url)
+    time.sleep(5)
+
+    # - Get Page Height
+    last_height = driver.execute_script('return document.body.scrollHeight')
+
+    # - Scroll to buttom of page
+    while True:
+        driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+        time.sleep(3)
+        new_height = driver.execute_script('return document.body.scrollHeight')
+        time.sleep(3)
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+    #  - Grab HTML
+    soup = BS(driver.page_source, 'lxml')
+
+    # - Create Dataframe  Placeholder
+    df_goat = pd.DataFrame({'title':[], 'price':[], 'year':[], 'color':[], 'product_url':[]})
+
+    # - Grab Product Cards
+    product_card = soup.find_all('div', class_ = 'GridStyles__GridCellWrapper-sc-1cm482p-0 biZBPm')
+   
+    # - Grab data points
+    for product in product_card:
+        try:
+            title = product.find('div', class_ = 'GridCellProductInfo__Name-sc-17lfnu8-3 hfCoWX').text
+            price = product.find('div', class_ = 'GridCellProductInfo__Price-sc-17lfnu8-6 gsZMPb').text
+            year  = product.find('div', class_ = 'GridCellProductInfo__Year-sc-17lfnu8-2 jJQboW').text
+            color = color_page
+            link  = 'https://www.goat.com/' + product.find('a', class_ = 'GridCellLink__Link-sc-2zm517-0 dcMqZE').get('href')
+            
+            df_goat = df_goat.append({'title':title, 'price':price, 'year':year, 'color':color, 'product_url':link}, ignore_index = True)
+            
+            # - Save File Name
+            filename  = 'goat_sneakers_' + color_page 
+            folder    = 'data/goat_website_data'
+            file_path = os.path.join(folder, filename)
+            df_goat.to_csv(file_path, index = False)
+                
+        except:
+            pass
+        
+    driver.close()
+    time.sleep(5)
+    
+
+    
