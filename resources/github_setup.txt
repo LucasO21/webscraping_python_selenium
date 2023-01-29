@@ -12,3 +12,8 @@ PUSH EXISTING REPOSITORY
 git remote add origin <github repo link>
 git branch -M main
 git push -u origin main
+
+
+
+# TERMINAL
+* Rename file or folder - mv oldname newname
