@@ -96,124 +96,230 @@ df_links.to_csv(r'data/gtabase/vehicle_links.csv', index=False)
 # ---------------------------------------------------------------------------------------------------------------------------------------------
 # SCRAPE DETAILS
 # ---------------------------------------------------------------------------------------------------------------------------------------------
-links_list_final[0]
+test_list = links_list_final[0:11]
+url       = links_list_final[49]
 
-# - Setup
-driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
-url    = links_list_final[0]
-driver.get(url)
-WDW(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="ja-current-content"]/div[1]/div[1]/h1')))
+# - Placeholder dataframe
+df_gta = pd.DataFrame({
+    'title':[], 'vehicle_class':[], 'manufacturer':[], 'features':[], 'acquisition':[], 
+    'price':[], 'storage_location':[], 'delivery_method':[], 'modifications':[], 'resale_flag':[], 
+    'resale_price':[], 'race_availability':[], 'top_speed_in_game':[], 'based_on':[], 'seats':[], 
+    'weight_in_kg':[], 'drive_train':[], 'gears':[], 'release_date':[], 'release_dlc':[], 
+    'top_speed_real':[], 'lap_time':[], 'bulletproof':[], 'weapon1_resistance':[], 
+    'weapon2_resistance':[], 'weapon3_resistance':[], 'weapon4_resistance':[], 'weapon5_resistance':[], 'speed':[], 
+    'acceleration':[], 'braking':[], 'handling':[], 'overall':[], 'vehicle_url':[]
+})
 
 # - Functions
-def extract_subtag_text_single(tag, attribute, pattern):
-    data_point = [i for i in soup.find_all(tag, attrs={attribute: True}) if pattern in i.get(attribute)][0].get(attribute).split(': ')[1]
+
+# -- Run `scroll_to_bottom()` script from previous section above 
+
+# -- Get single text from sub `title` tag
+def extract_subtag_text_single(soup, tag = 'a', attribute = 'title', pattern = None):
+    
+    try:
+        data_point = [i for i in soup.find_all(tag, attrs={attribute: True}) if pattern in i.get(attribute)][0].get(attribute).split(': ')[1]
+    except:
+        data_point = 'NA'
+        
     return data_point
 
-def extract_subtag_text_multiple(tag, attribute, pattern):
-    a_tags  = [i for i in soup.find_all(tag, attrs={attribute: True}) if pattern in i.get(attribute)]
-    t_tag   = [a_tag.get(attribute) for a_tag in a_tags]
-    feature = [i.replace(pattern + ':', '').strip() for i in t_tag]
+# -- Get multiple text from sub `title` tag
+def extract_subtag_text_multiple(soup, tag = 'a', attribute = 'title', pattern = 'None'):
+            
+            try:
+                a_tags  = [i for i in soup.find_all(tag, attrs={attribute: True}) if pattern in i.get(attribute)]
+                t_tag   = [a_tag.get(attribute) for a_tag in a_tags]
+                feature = [i.replace(pattern + ':', '').strip() for i in t_tag]
+            except:
+                feature = 'NA'
+                
     
-    return feature
+            return feature       
+         
+# -- Get text from sub `span` tag
+def extract_subspan(soup, tag = 'dd', sub_tag = 'span',  class_1 = 'field-entry', class_2 = 'field-value', pattern = None):    
 
-def extract_subspan(tag = 'dd', sub_tag = 'span',  class_1 = 'field-entry', class_2 = 'field-value', pattern = None):
-    
-    dd_tags = soup.find_all(tag, class_ = class_1)
-                                     
-    dd_data = None
-    for dd in dd_tags:
-        for span in dd.find_all(sub_tag):
-            if span.get_text().strip() == pattern:
-                dd_data = dd
+        dd_tags = soup.find_all(tag, class_ = class_1)
+                                        
+        dd_data = None
+        for dd in dd_tags:
+            for span in dd.find_all(sub_tag):
+                if span.get_text().strip() == pattern:
+                    dd_data = dd
+                    break
+            if dd_data:
                 break
-        if dd_data:
-            break
+            
+        for i in dd_data:
+            if pattern in str(i):
+                data = dd_data.find(sub_tag, class_= class_2).get_text().strip() 
+                break
+        else:
+            data = 'NA'   
+            
+        return data
 
-    if dd_data:
-        data = dd_data.find(sub_tag, class_= class_2).get_text().strip()     
+# -- Get text from `tr` tag
+def extract_td_subtag(soup, pattern):
     
-    return data    
-
-def extract_td_subtag(pattern):
-    
-    tr_tags = [i for i in soup.find_all('tr') if pattern in i.text]
-    td_tags = [i.text.strip() for i in tr_tags] 
-    data    = td_tags[0].split('\n')[1]
-    
+    try:
+        tr_tags = [i for i in soup.find_all('tr') if pattern in i.text]
+        td_tags = [i.text.strip() for i in tr_tags] 
+        data    = td_tags[0].split('\n')[1]
+        
+    except:
+        data = 'NA'
     return data
 
-# - Scroll to buttom
-scroll_to_bottom()
+# -- Return NA for any errors
+def try_except(func):
+    
+    try:
+       output = func
+    except:
+        output = 'NA'
+    
+    return output
+    
+# ---- For loop to scrape data ----
+len(links_list_final)
 
-# - Get HTML
-soup = BS(driver.page_source, 'lxml')
+batch = links_list_final[401:709]
 
-# - Get datapoints
+t1 = time.time()
+for link in batch:
+    
+    try:
 
-# -- General Info
-title            = soup.find('h1', class_ = 'contentheading').text.strip()
-vehicle_class    = extract_subtag_text_single('a', 'title', 'Vehicle Class')
-manufacturer     = extract_subtag_text_single('a', 'title', 'Manufacturer')
-features         = extract_subtag_text_multiple('a', 'title', 'Vehicle Features')
-acquisition      = extract_subtag_text_single('a', 'title', 'Acquisition')
-price            = extract_subspan('dd', 'span', 'field-entry', 'field-value', 'GTA Online Price')
-storage_location = extract_subtag_text_single('a', 'title', 'Storage Location')
-delivery_method  = extract_subtag_text_single('a', 'title', 'Delivery Method')
-modifications    = extract_subtag_text_single('a', 'title', 'Modifications')
-resale_fla       = extract_subtag_text_single('a', 'title', 'Sell')
-resale_price     = extract_subspan('dd', 'span', 'field-entry', 'field-value', 'Sell Price (Resale)').strip()
-race_availability = extract_subtag_text_single('a', 'title', 'Race Availability')
-top_speed_in_game = extract_subspan('dd', 'span', 'field-entry', 'field-value', 'Top Speed - Game Files').strip()
-based_on          = extract_subspan(pattern = 'Based on (Real Life)').strip()
-seats             = extract_subspan(pattern = 'Seats')
-weight_in_kg      = extract_subspan(pattern = 'Mass / Weight')
-drive_train       = extract_subspan(pattern = 'RWD')
-gears             = extract_subspan(pattern = 'Gears')
+        # ---- Setup ----
+        driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
+        url    = link
+        driver.get(url)
+        WDW(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="ja-current-content"]/div[1]/div[1]/h1')))
 
-# -- Performance (Racing)
-top_speed_real    = extract_subspan(pattern = 'Top Speed - Real')
-lap_time          = extract_subspan(pattern = 'Lap Time')
-bulletproof       = extract_subspan(pattern = 'Bulletproof')
+        # - Scroll to buttom
+        scroll_to_bottom()
 
-# -- Weapon Resistance
-weapon1_resistance = extract_td_subtag(pattern = 'Homing Launcher / Oppressor Missiles / Jet Missiles')
-weapon2_resistance = extract_td_subtag(pattern = 'RPG / Grenades / Sticky Bomb / MOC Cannon')
-weapon3_resistance = extract_td_subtag(pattern = 'Explosive Rounds (Heavy Sniper Mk II)')
-weapon4_resistance = extract_td_subtag(pattern = 'Tank Cannon (Rhino / APC)')
-weapon5_resistance = extract_td_subtag(pattern = 'Anti-Aircraft Trailer Dual 20mm Flak')
-
-# -- Statistics
-speed               = soup.find('dd', class_ = 'field-entry speed').text.strip()
-acceleration        = soup.find('dd', class_ = 'field-entry acceleration').text.strip()
-braking             = soup.find('dd', class_ = 'field-entry braking').text.strip()
-handling            = soup.find('dd', class_ = 'field-entry handling').text.strip()
-overall             = soup.find('dd', class_ = 'field-entry overall').text.strip()
+        # ---- Get HTML ----
+        soup = BS(driver.page_source, 'lxml')      
 
 
-# ARCHIVE
+        # ---- Get datapoints ----
 
-# - Vehicle Class
-#vehicle_class = [i for i in soup.find_all('a', attrs={"title": True}) if "Vehicle Class" in i.get('title')][0].get('title').split(': ')[1]
+        # -- General Info
+        title             = try_except(func = soup.find('h1', class_ = 'contentheading').text.strip()) 
+        vehicle_class     = try_except(func = extract_subtag_text_single(soup = soup, pattern = 'Vehicle Class'))
+        manufacturer      = try_except(func = extract_subtag_text_single(soup = soup, pattern = 'Manufacturer'))
+        features          = try_except(func = ', '.join(extract_subtag_text_multiple(soup = soup, pattern = 'Vehicle Features'))) 
+        acquisition       = try_except(func = extract_subtag_text_single(soup = soup, pattern = 'Acquisition')) 
+        price             = try_except(func = extract_subspan(soup = soup, pattern = 'GTA Online Price')) 
+        storage_location  = try_except(func = extract_subtag_text_single(soup = soup, pattern = 'Storage Location')) 
+        delivery_method   = try_except(func = extract_subtag_text_single(soup = soup, pattern = 'Delivery Method')) 
+        modifications     = try_except(func = extract_subtag_text_single(soup = soup, pattern = 'Modifications')) 
+        resale_flag       = try_except(func = extract_subtag_text_single(soup = soup, pattern = 'Sell')) 
+        
+        try:
+            resale_price  = try_except(func = extract_subspan(soup = soup, pattern = 'Sell Price (Resale)').strip())
+        except:
+            resale_price  = 'NA'
+            
+        race_availability = try_except(func = extract_subtag_text_single(soup = soup, pattern = 'Race Availability'))
+        top_speed_in_game = try_except(func = extract_subspan(soup = soup, pattern = 'Top Speed - Game Files').strip()) 
+        based_on          = try_except(func = extract_subspan(soup = soup, pattern = 'Based on (Real Life)').strip()) 
+        seats             = try_except(func = extract_subspan(soup = soup, pattern = 'Seats')) 
+        weight_in_kg      = try_except(func = extract_subspan(soup = soup, pattern = 'Mass / Weight')) 
+        
+        try:
+            drive_train   = try_except(func = extract_subspan(soup = soup, pattern = 'RWD')) 
+        except:
+            drive_train   = 'NA'
+            
+        try: 
+            gears         = try_except(func = extract_subspan(soup = soup, pattern = 'Gears')) 
+        except:
+            gears         = 'NA'
+            
+        release_date      = try_except(func = extract_subspan(soup = soup, pattern = 'Release Date')) 
+        release_dlc       = try_except(func = extract_subspan(soup = soup, pattern = 'DLC / Title Update')) 
+        
+        # -- Performance (Racing)
+        top_speed_real    = try_except(func = extract_subspan(soup = soup, pattern = 'Top Speed - Real')) 
+        lap_time          = try_except(func = extract_subspan(soup = soup, pattern = 'Lap Time')) 
+        bulletproof       = try_except(func = extract_subspan(soup = soup, pattern = 'Bulletproof')) 
 
-# - Vehicle Features
-# a_tags  = [i for i in soup.find_all('a', attrs={"title": True}) if "Vehicle Features" in i.get('title')]
-# t_tag   = [a_tag.get("title") for a_tag in a_tags]
-# feature = [i.replace('Vehicle Features:', '') for i in t_tag]
+        # -- Weapon Resistance
+        weapon1_resistance = try_except(func = extract_td_subtag(soup = soup, pattern = 'Homing Launcher / Oppressor Missiles / Jet Missiles'))
+        weapon2_resistance = try_except(func = extract_td_subtag(soup = soup, pattern = 'RPG / Grenades / Sticky Bomb / MOC Cannon'))
+        weapon3_resistance = try_except(func = extract_td_subtag(soup = soup, pattern = 'Explosive Rounds (Heavy Sniper Mk II)')) 
+        weapon4_resistance = try_except(func = extract_td_subtag(soup = soup, pattern = 'Tank Cannon (Rhino / APC)')) 
+        weapon5_resistance = try_except(func = extract_td_subtag(soup = soup, pattern = 'Anti-Aircraft Trailer Dual 20mm Flak')) 
 
-# - Price 
-# dd_tags = soup.find_all('dd', class_ = 'field-entry')
+        # -- Statistics
+        speed               = try_except(func = soup.find('dd', class_ = 'field-entry speed').text.strip()) 
+        acceleration        = try_except(func = soup.find('dd', class_ = 'field-entry acceleration').text.strip()) 
+        braking             = try_except(func = soup.find('dd', class_ = 'field-entry braking').text.strip()) 
+        handling            = try_except(func = soup.find('dd', class_ = 'field-entry handling').text.strip()) 
+        overall             = try_except(func = soup.find('dd', class_ = 'field-entry overall').text.strip()) 
+        
+        # -- Link
+        vehicle_url         = try_except(func = link)
 
-# dd_online_price = None
-# for dd in dd_tags:
-#     for span in dd.find_all('span'):
-#         if span.get_text().strip() == 'GTA Online Price':
-#             dd_online_price = dd
-#             break
-#     if dd_online_price:
-#         break
+        # ---- Append to dataframe ----
+        df_gta = df_gta.append({    
+            'title':              title, 
+            'vehicle_class':      vehicle_class, 
+            'manufacturer':       manufacturer, 
+            'features':           features, 
+            'acquisition':        acquisition, 
+            'price':              price, 
+            'storage_location':   storage_location,
+            'delivery_method':    delivery_method, 
+            'modifications':      modifications,
+            'resale_flag':        resale_flag, 
+            'resale_price':       resale_price, 
+            'race_availability':  race_availability, 
+            'top_speed_in_game':  top_speed_in_game, 
+            'based_on':           based_on, 
+            'seats':              seats, 
+            'weight_in_kg':       weight_in_kg, 
+            'drive_train':        drive_train, 
+            'gears':              gears, 
+            'release_date':       release_date, 
+            'release_dlc':        release_dlc, 
+            'top_speed_real':     top_speed_real, 
+            'lap_time':           lap_time, 
+            'bulletproof':        bulletproof, 
+            'weapon1_resistance': weapon1_resistance, 
+            'weapon2_resistance': weapon2_resistance, 
+            'weapon3_resistance': weapon3_resistance, 
+            'weapon4_resistance': weapon4_resistance, 
+            'weapon5_resistance': weapon5_resistance, 
+            'speed':              speed, 
+            'acceleration':       acceleration, 
+            'braking':            braking, 
+            'handling':           handling, 
+            'overall':            overall,
+            'vehicle_url':        link
+        }, ignore_index = True)
 
-# if dd_online_price:
-#     price = dd_online_price.find('span', class_='field-value').get_text().strip()
+        df_gta.info()
+        
+    except:
+        pass
+    
+    driver.close()
+    time.sleep(3)
+    
+t2 = time.time()
+
+print("Scrape Time: ", t2 - t1) 
+
+
+df_gta.shape
+
+df_gta.to_csv(r'data/gtabase/gta_data_batch_3.csv')
+
 
 
 
