@@ -1,6 +1,6 @@
-# SCRAPE DETAILS ON GTA VEHICLES FROM GTABASE.COM
+# ---- SCRAPE DETAILS ON GTA VEHICLES FROM GTABASE.COM ----
 
-# Imports
+#  ---- Imports ----
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup as BS
@@ -13,23 +13,15 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import os
 
-# Setup
+
+# ---- Setup ----
 driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
 url    = "https://www.gtabase.com/grand-theft-auto-v/vehicles/#sort=attr.ct3.frontend_value&sortdir=desc"
 driver.get(url)
 WDW(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="ja-current-content"]/div[2]/div[2]/div/div[3]/div/div[1]')))
 
-# - Functions ----------------------------------------------------------------------------------------------------------------------------------
-def initialize_driver(url, look_xpath):
-    
-    driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
-    url    = url
-    driver.get(url)
-    WDW(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, look_xpath)))
-    
-    
 
-
+# ---- Functions ----
 def scroll_to_bottom():
     
     # - Grab The Height of The Page
@@ -44,18 +36,19 @@ def scroll_to_bottom():
             break
         last_height = new_height
     
-# ---------------------------------------------------------------------------------------------------------------------------------------------
 
-# GET LINKS FOR ALL VEHICLES
 
+# ---- GET LINKS FOR ALL VEHICLES ----
+
+# - Loop through pages and get links for each vehicle
 links_list = []
 
 while True:
     
-    # - Scroll to buttom
+    # -- Scroll to buttom
     scroll_to_bottom()
     
-    # - Get urls of vehicles and append to list
+    # -- Get urls of vehicles and append to list
     try:
         # - Grab HTML
         soup = BS(driver.page_source, 'lxml')
@@ -69,7 +62,7 @@ while True:
     except:
         pass
     
-    # - Click on the next page
+    # -- Click on the next page
     try:
         next_button = driver.find_element('xpath', '//*[@id="ja-current-content"]/div[2]/div[2]/div/div[2]/div/div[1]/ul/li[9]/a/span')
         next_button.click()        
@@ -80,7 +73,7 @@ while True:
 driver.quit()
 
 
-# - Save Dataframe
+# ---- Save Dataframe ----
 links_list_final = []
 
 for i in links_list:
@@ -93,24 +86,11 @@ df_links.to_csv(r'data/gtabase/vehicle_links.csv', index=False)
 
 
 
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-# SCRAPE DETAILS
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-test_list = links_list_final[0:11]
-url       = links_list_final[49]
+# ---- SCRAPE VEHICLE DETAILS ----
+# test_list = links_list_final[0:11]
+# url       = links_list_final[49]
 
-# - Placeholder dataframe
-df_gta = pd.DataFrame({
-    'title':[], 'vehicle_class':[], 'manufacturer':[], 'features':[], 'acquisition':[], 
-    'price':[], 'storage_location':[], 'delivery_method':[], 'modifications':[], 'resale_flag':[], 
-    'resale_price':[], 'race_availability':[], 'top_speed_in_game':[], 'based_on':[], 'seats':[], 
-    'weight_in_kg':[], 'drive_train':[], 'gears':[], 'release_date':[], 'release_dlc':[], 
-    'top_speed_real':[], 'lap_time':[], 'bulletproof':[], 'weapon1_resistance':[], 
-    'weapon2_resistance':[], 'weapon3_resistance':[], 'weapon4_resistance':[], 'weapon5_resistance':[], 'speed':[], 
-    'acceleration':[], 'braking':[], 'handling':[], 'overall':[], 'vehicle_url':[]
-})
-
-# - Functions
+# ---- Functions ----
 
 # -- Run `scroll_to_bottom()` script from previous section above 
 
@@ -183,9 +163,22 @@ def try_except(func):
     return output
     
 # ---- For loop to scrape data ----
-len(links_list_final)
+# - After getting links for each vehicle, I proceeded to scrape details for each link in batches
 
 batch = links_list_final[401:709]
+
+# ---- Placeholder dataframe ----
+
+# -- Re-run this section for each batch 
+df_gta = pd.DataFrame({
+    'title':[], 'vehicle_class':[], 'manufacturer':[], 'features':[], 'acquisition':[], 
+    'price':[], 'storage_location':[], 'delivery_method':[], 'modifications':[], 'resale_flag':[], 
+    'resale_price':[], 'race_availability':[], 'top_speed_in_game':[], 'based_on':[], 'seats':[], 
+    'weight_in_kg':[], 'drive_train':[], 'gears':[], 'release_date':[], 'release_dlc':[], 
+    'top_speed_real':[], 'lap_time':[], 'bulletproof':[], 'weapon1_resistance':[], 
+    'weapon2_resistance':[], 'weapon3_resistance':[], 'weapon4_resistance':[], 'weapon5_resistance':[], 'speed':[], 
+    'acceleration':[], 'braking':[], 'handling':[], 'overall':[], 'vehicle_url':[]
+})
 
 t1 = time.time()
 for link in batch:
@@ -313,11 +306,13 @@ for link in batch:
     
 t2 = time.time()
 
+# ---- Check time to run ----
 print("Scrape Time: ", t2 - t1) 
 
-
+# ---- Inspect dataframe ----
 df_gta.shape
 
+# ---- Save to data folder
 df_gta.to_csv(r'data/gtabase/gta_data_batch_3.csv')
 
 
