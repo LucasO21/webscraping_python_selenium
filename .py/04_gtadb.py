@@ -1,5 +1,9 @@
 # ---- SCRAPE DETAILS ON GTA VEHICLES FROM GTABASE.COM ----
 
+# - Section 1: Scrape links to vehicles
+# - Section 2: Scrape vehicle details
+# - Section 3: Scrape upgrade cost. This data point was mistakenly skipped in section 2
+
 #  ---- Imports ----
 import pandas as pd
 import requests
@@ -38,7 +42,7 @@ def scroll_to_bottom():
     
 
 
-# ---- GET LINKS FOR ALL VEHICLES ----
+# ---- SCRAPE LINKS FOR ALL VEHICLES ----
 
 # - Loop through pages and get links for each vehicle
 links_list = []
@@ -73,7 +77,7 @@ while True:
 driver.quit()
 
 
-# ---- Save Dataframe ----
+# ---- Format urls ----
 links_list_final = []
 
 for i in links_list:
@@ -82,6 +86,7 @@ for i in links_list:
     
 df_links = pd.DataFrame({'vehicle_links': links_list_final})
 
+# ---- Save Dataframe ----
 df_links.to_csv(r'data/gtabase/vehicle_links.csv', index=False)
 
 
@@ -165,6 +170,7 @@ def try_except(func):
 # ---- For loop to scrape data ----
 # - After getting links for each vehicle, I proceeded to scrape details for each link in batches
 
+batch = links_list_final[0:401]
 batch = links_list_final[401:709]
 
 # ---- Placeholder dataframe ----
@@ -196,7 +202,6 @@ for link in batch:
 
         # ---- Get HTML ----
         soup = BS(driver.page_source, 'lxml')      
-
 
         # ---- Get datapoints ----
 
@@ -319,6 +324,7 @@ df_gta.to_csv(r'data/gtabase/gta_data_batch_3.csv')
 # - Code below is used to scrape the total cost to upgrade which was mistakenly omitted from the previous section
 
 # ---- Batches ----
+batch = links_list_final[0:401]
 batch = links_list_final[401:709]
 
 # ---- Dataframe placeholder ----
@@ -337,7 +343,7 @@ for link in batch:
         WDW(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="ja-current-content"]/div[1]/div[1]/h1')))
 
         # - Scroll to buttom
-        scroll_to_bottom()
+        scroll_to_bottom() # Run this function from previous section
 
         # ---- Get HTML ----
         soup = BS(driver.page_source, 'lxml')      
@@ -364,20 +370,7 @@ for link in batch:
     time.sleep(3)
     
 # ---- Save to data folder ----
-df_upgrade_cost.to_csv(r'data/gtabase/gta_data_upgrade_cost_1.csv')
+df_upgrade_cost.to_csv(r'data/gtabase/gta_data_upgrade_cost_2.csv')
 
-# ---------------------------------------------------------------------------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------------------------------------------------------------------------
