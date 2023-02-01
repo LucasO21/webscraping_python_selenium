@@ -295,9 +295,7 @@ for link in batch:
             'overall':            overall,
             'vehicle_url':        link
         }, ignore_index = True)
-
-        df_gta.info()
-        
+       
     except:
         pass
     
@@ -317,6 +315,56 @@ df_gta.to_csv(r'data/gtabase/gta_data_batch_3.csv')
 
 
 
+# ---- SCRAPE UPGRADE COST ----
+# - Code below is used to scrape the total cost to upgrade which was mistakenly omitted from the previous section
+
+# ---- Batches ----
+batch = links_list_final[401:709]
+
+# ---- Dataframe placeholder ----
+df_upgrade_cost = pd.DataFrame({'upgrade_cost':[], 'vehicle_url':[]})
+
+# ---- For loop -----
+# - Loops through each url and gets the `total cost to upgrade`
+for link in batch:
+    
+    try:
+
+        # ---- Setup ----
+        driver = webdriver.Chrome("../../chrome_driver/chromedriver_mac64/chromedriver")
+        url    = link
+        driver.get(url)
+        WDW(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="ja-current-content"]/div[1]/div[1]/h1')))
+
+        # - Scroll to buttom
+        scroll_to_bottom()
+
+        # ---- Get HTML ----
+        soup = BS(driver.page_source, 'lxml')      
+
+        # ---- Get datapoints ----
+        try:
+            upgrade_cost     = soup.find('div', class_ = 'field-entry garage-value').text        
+        except:
+            upgrade_cost     = 'NA'
+            
+        # -- Link
+        vehicle_url         = link
+
+        # ---- Append to dataframe ----
+        df_upgrade_cost = df_upgrade_cost.append({
+            'upgrade_cost': upgrade_cost,
+            'vehicle_url':  link                                                 
+          
+        }, ignore_index = True)        
+    except:
+        pass
+    
+    driver.close()
+    time.sleep(3)
+    
+# ---- Save to data folder ----
+df_upgrade_cost.to_csv(r'data/gtabase/gta_data_upgrade_cost_1.csv')
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------
 
