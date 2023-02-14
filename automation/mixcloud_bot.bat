@@ -1,1 +1,0 @@
-"/Users/BachataLu/opt/anaconda3/envs/webscraping_python_env/python.exe" "/Users/BachataLu/Desktop/School/2023_projects/web_scraping_py/.py/05_mixcloud.py"
