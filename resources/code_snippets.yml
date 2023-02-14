@@ -1,6 +1,0 @@
-# TIMING AN OPERATION
-
-start = time.time()
-# code to be timed here
-end = time.time()
-print("Elapsed time: ", end - start)
