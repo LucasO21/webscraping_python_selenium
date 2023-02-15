@@ -7,13 +7,13 @@
 `end = time.time()`
 `print("Elapsed time: ", end - start)`
 
-# SCHEDULING A SCRIPT
+# CRONTAB SYNTAX
 
-- Open terminal
-- ```crontab -e``` to open crontab
-- ```i``` to insert
-- ```* * * * /path to python script
+Resource - "https://crontab.guru/"
 
-- ```Ctrl + X, Y``` to save
-- ```esc```
-- ```:wq``` to quit crontab
+- Open Terminal
+- Open Crontab - ```crontab -e```
+- Insert to Edit - ```i``` 
+- Save - ```Ctrl + X, Y``` 
+- Exit - ```esc```
+- Exit Crontab - ```:wq``` 
