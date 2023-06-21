@@ -9,6 +9,6 @@
 
 
     "git.ignoreLimitWarning": true,
-    "jupyter.sendSelectionToInteractiveWindow": false,
-    "editor.fontSize": 11
+    "editor.fontSize": 11,
+    "jupyter.interactiveWindow.textEditor.executeSelection": false
 }
